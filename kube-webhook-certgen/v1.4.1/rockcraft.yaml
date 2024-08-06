@@ -1,0 +1,155 @@
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+# Rockcraft definition for the kube-webhook-certgen:v1.4.1 image:
+# registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.4.1
+
+name: kube-webhook-certgen
+summary: Rock containing kube-webhook-certgen executable.
+description: |
+  Rock containing kube-webhook-certgen executable available at:
+  https://github.com/kubernetes/ingress-nginx/tree/controller-v1.11.0/images/kube-webhook-certgen
+license: Apache-2.0
+
+# NOTE(aznashwan): the `kube-webhook-certgen` image is versioned independently
+# from the main `nginx-ingress-controller` image, with 'v1.4.1' being the tag
+# corresponding to the `controller-v1.11.0`
+# https://github.com/kubernetes/ingress-nginx/pull/11212
+# https://github.com/kubernetes/ingress-nginx/releases/tag/controller-v1.11.0
+version: v1.4.1
+
+# NOTE(aznashwan): upstream image is build from `gcr.io/distroless/static:nonroot`:
+# https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/images/kube-webhook-certgen/rootfs/Dockerfile#L27
+# The base `distroless/static:nonroot` image is built using Bazel and is basically
+# just a very minimal Debian-based image with a `nonroot` user added to it.
+# https://github.com/GoogleContainerTools/distroless/blob/main/base
+base: bare
+build-base: ubuntu@22.04
+platforms:
+  amd64:
+  arm64:
+
+services:
+  kube_webhook_certgen:
+    startup: enabled
+    override: replace
+
+    command: /kube-webhook-certgen
+
+    user: nonroot
+    group: nonroot
+    working-dir: /
+
+parts:
+
+  # NOTE(aznashwan): upstream image is build from `gcr.io/distroless/static:nonroot`:
+  # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/images/kube-webhook-certgen/rootfs/Dockerfile#L27
+  # The base `distroless/static:nonroot` image is built using Bazel and is basically
+  # just a very minimal Debian-based image with a `nonroot` user added to it.
+  # https://github.com/GoogleContainerTools/distroless/blob/main/base
+  install-base-packages:
+    plugin: nil
+    stage-packages:
+      - base-files
+      - netbase
+      - tzdata
+      - passwd
+      - login
+      # https://github.com/GoogleContainerTools/distroless/blob/a019fc2/base/base.bzl#L118
+      - libssl3
+    override-build: |
+      set -eux -o pipefail
+
+      # Manually include nsswitch.conf as seen here:
+      # https://github.com/GoogleContainerTools/distroless/blob/a019fc2/base/base.bzl#L92
+      etc="$CRAFT_PART_INSTALL/etc"
+      mkdir -p $etc
+      cp $CRAFT_PROJECT_DIR/nsswitch.conf $etc/nsswitch.conf
+
+  include-busybox-debug:
+    after: ["install-base-packages"]
+    plugin: nil
+    build-packages:
+      - busybox-static
+
+    build-environment:
+      # NOTE(aznashwan): the upstream dstroless images also have variants with
+      # BusyBox included to facilitate debugging, which we will conditionally
+      # include based on this environment variable.
+      # https://github.com/GoogleContainerTools/distroless/blob/a019fc2/base/base.bzl#L157
+      # TODO(aznashwan): set this back to 0:
+      - DISTROLESS_BUSYBOX_DEBUG: 1
+
+    override-build: |
+      set -eux
+
+      if [ "$DISTROLESS_BUSYBOX_DEBUG" -eq "1" ]; then
+        mkdir -p "$CRAFT_PART_INSTALL/bin"
+        cp $(which busybox) "$CRAFT_PART_INSTALL/bin"
+      fi
+
+  setup-users:
+    after: ["install-base-packages"]
+    plugin: nil
+    stage-packages:
+      # NOTE(aznashwan): considering we can't use `overlay-script` when
+      # using 'base: bare', we need to (re)stage `passwd` here:
+      - passwd
+    override-build: |
+      set -eux -o pipefail
+
+      # https://github.com/GoogleContainerTools/distroless/blob/a019fc2/common/variables.bzl#L17-L19
+      ROOT_UID=0
+      NONROOT_UID=65532
+      NOBODY_UID=65534
+
+      # root:
+      groupadd -R $CRAFT_PART_INSTALL -r -g $ROOT_UID root
+      useradd -R $CRAFT_PART_INSTALL \
+        -s /sbin/nologin -d /root --no-log-init -r -m -g $ROOT_UID -u $ROOT_UID root
+
+      # nobody:
+      groupadd -R $CRAFT_PART_INSTALL -r -g $NOBODY_UID nobody
+      useradd -R $CRAFT_PART_INSTALL \
+        -s /sbin/nologin -d /nonexistent --no-log-init -r -m -g $NOBODY_UID -u $NOBODY_UID nobody
+
+      # nonroot:
+      NONROOT_HOME="$CRAFT_PART_INSTALL/home/nonroot"
+      mkdir -p $NONROOT_HOME
+
+      groupadd -R $CRAFT_PART_INSTALL -r -g $NONROOT_UID nonroot
+      useradd -R $CRAFT_PART_INSTALL \
+        -s /sbin/nologin -d $NONROOT_HOME --no-log-init -r -m -g $NONROOT_UID -u $NONROOT_UID nonroot
+
+      chown -R $NONROOT_UID:$NONROOT_UID $NONROOT_HOME
+
+  # Sourced from:
+  # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/images/kube-webhook-certgen/rootfs/Dockerfile
+  build-kube-webhook-certgen:
+    after: ["setup-users"]
+    plugin: go
+
+    source-type: git
+    source: https://github.com/kubernetes/ingress-nginx
+    source-tag: controller-v1.11.0
+    source-depth: 1
+    source-subdir: images/kube-webhook-certgen/rootfs/
+
+    build-environment:
+      - CGO_ENABLED: 0
+      - GOOS: linux
+      - GOARCH: $CRAFT_ARCH_BUILD_FOR
+
+    build-snaps:
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/GOLANG_VERSION#L1
+      - go/1.22/stable
+
+    override-build: |
+      set -eux -o pipefail
+
+      cd $CRAFT_PART_SRC/images/kube-webhook-certgen/rootfs
+
+      go mod tidy
+      go build -a -o kube-webhook-certgen main.go
+
+      cp ./kube-webhook-certgen $CRAFT_PART_INSTALL/kube-webhook-certgen
