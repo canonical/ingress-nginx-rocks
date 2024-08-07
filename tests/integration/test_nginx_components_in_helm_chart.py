@@ -33,8 +33,7 @@ INSTALL_NAME = "ingress-nginx"
 # image URLs and version during testing.
 # https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
 IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP = {
-    # TODO(aznashwan): enable this when controller ROCK is ready:
-    # "controller": "controller",
+    "controller": "controller",
     # https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml#L807
     "kube-webhook-certgen": "controller.admissionWebhooks.patch",
 }
@@ -51,12 +50,27 @@ def test_nginx_ingress_chart_deployment(
     # image fields for each component:
     all_chart_value_overrides_args = []
 
-    # TODO(aznashwan): enable when nginx rock is ready:
-    # nginx_rock_info = env_util.get_build_meta_info_for_rock_version(
-    #     "controller",
-    #     controller_version,
-    #     architecture,
-    # )
+    controller_rock_info = env_util.get_build_meta_info_for_rock_version(
+        "controller",
+        controller_version,
+        architecture,
+    )
+    controller_chart_section = IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP["controller"]
+    controller_image, controller_tag = controller_rock_info.image.split(":")
+    controller_registry, controller_image_name = controller_image.split("/", maxsplit=1)
+    controller_digest = controller_tag.split("0")[0]
+    all_chart_value_overrides_args.extend(
+        [
+            "--set",
+            f"{controller_chart_section}.image.registry={controller_registry}",
+            "--set",
+            f"{controller_chart_section}.image.image={controller_image_name}",
+            "--set",
+            f"{controller_chart_section}.image.tag={controller_tag}",
+            "--set",
+            f"{controller_chart_section}.image.digest=sha256:{controller_digest}",
+        ]
+    )
 
     certgen_rock_info = env_util.get_build_meta_info_for_rock_version(
         "kube-webhook-certgen",
@@ -68,7 +82,7 @@ def test_nginx_ingress_chart_deployment(
     ]
     certgen_image, certgen_tag = certgen_rock_info.image.split(":")
     certgen_registry, certgen_image_name = certgen_image.split("/", maxsplit=1)
-    certgen_digest = certgen_tag.split('0')[0]
+    certgen_digest = certgen_tag.split("0")[0]
     all_chart_value_overrides_args.extend(
         [
             "--set",
