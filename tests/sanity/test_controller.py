@@ -15,7 +15,7 @@ LOG.addHandler(logging.StreamHandler(sys.stdout))
 
 
 IMAGE_NAME = "controller"
-IMAGE_VERSIONS = ["v1.11.0"]
+IMAGE_VERSIONS = ["v1.10.1", "v1.11.0"]
 
 
 @pytest.mark.abort_on_fail

@@ -16,13 +16,16 @@ LOG.addHandler(logging.FileHandler(f"{__name__}.log"))
 LOG.addHandler(logging.StreamHandler(sys.stdout))
 
 
-NGINX_CONTROLLER_VERSIONS = ["v1.11.0"]
+NGINX_CONTROLLER_VERSIONS = ["v1.10.1", "v1.11.0"]
 # NOTE(aznashwan): the `kube-webhook-certgen` image is versioned
 # separately from the main `nginx-controller` image.
 NGINX_KUBE_WEBHOOK_CERTGEN_VERSION_MAP = {
     # https://github.com/kubernetes/ingress-nginx/pull/11212
     # https://github.com/kubernetes/ingress-nginx/releases/tag/controller-v1.11.0
-    "v1.11.0": "v1.4.1"
+    "v1.11.0": "v1.4.1",
+    # https://github.com/kubernetes/ingress-nginx/pull/11033
+    # https://github.com/kubernetes/ingress-nginx/releases/tag/controller-v1.10.0
+    "v1.10.1": "v1.4.0",
 }
 
 CHART_RELEASE_URL = "https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.11.1/ingress-nginx-4.11.1.tgz"
