@@ -134,6 +134,12 @@ parts:
   build-nginx:
     plugin: nil
     after: ['build-libgrpcpp', 'build-libssl']
+
+    source-type: git
+    source: https://github.com/kubernetes/ingress-nginx
+    source-tag: controller-v1.11.0
+    source-depth: 1
+
     build-packages:
       - bash
       - gcc
@@ -775,6 +781,7 @@ parts:
       cp -rp /opt/* $CRAFT_PART_INSTALL/opt
 
       mkdir -p $CRAFT_PART_INSTALL/etc/nginx
+      cp -rp $CRAFT_PART_SRC/rootfs/etc/nginx/* $CRAFT_PART_INSTALL/etc/nginx
       cp -rp /etc/nginx/* $CRAFT_PART_INSTALL/etc/nginx
 
       # Added files/directories that need creating:
