@@ -81,7 +81,7 @@ def test_nginx_ingress_chart_deployment(
             "--set",
             f"{controller_chart_section}.image.tag={controller_tag}",
             "--set",
-            f"{controller_chart_section}.image.digest=sha256:{controller_digest}",
+            f"{controller_chart_section}.image.digest={controller_digest}",
         ]
     )
     # NOTE(aznashwan): Ubuntu has defaults for the IDs of the www-data
@@ -117,7 +117,7 @@ def test_nginx_ingress_chart_deployment(
             "--set",
             f"{certgen_chart_section}.image.tag={certgen_tag}",
             "--set",
-            f"{certgen_chart_section}.image.digest=sha256:{certgen_digest}",
+            f"{certgen_chart_section}.image.digest={certgen_digest}",
         ]
     )
 
