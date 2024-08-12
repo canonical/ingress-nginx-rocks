@@ -28,7 +28,10 @@ NGINX_KUBE_WEBHOOK_CERTGEN_VERSION_MAP = {
     "v1.10.1": "v1.4.0",
 }
 
-CHART_RELEASE_URL = "https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.11.1/ingress-nginx-4.11.1.tgz"
+# HACK(aznashwan): revert to upstream chart once this PR is included in a release:
+# https://github.com/kubernetes/ingress-nginx/pull/11710
+# CHART_RELEASE_URL = "https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.11.1/ingress-nginx-4.11.1.tgz"
+CHART_RELEASE_URL = "https://github.com/aznashwan/ingress-nginx/releases/download/helm-chart-4.11.1/ingress-nginx-4.11.1.tgz"
 INSTALL_NAME = "ingress-nginx"
 
 # This mapping indicates which fields of the upstream Nginx-ingress Helm chart
