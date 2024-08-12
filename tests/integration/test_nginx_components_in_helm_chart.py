@@ -8,7 +8,7 @@ import sys
 
 import pytest
 from k8s_test_harness import harness
-from k8s_test_harness.util import env_util, platform_util
+from k8s_test_harness.util import env_util, exec_util, platform_util
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -45,8 +45,8 @@ IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP = {
 }
 
 
-def _get_image_digest(instance: harness.Instance, image: str) -> str:
-    proc = instance.exec(
+def _get_image_digest(image: str) -> str:
+    proc = exec_util.run(
         ["docker", "images", "--no-trunc", "--quiet", image], capture_output=True
     )
     return proc.stdout.decode().strip()
@@ -71,7 +71,7 @@ def test_nginx_ingress_chart_deployment(
     controller_chart_section = IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP["controller"]
     controller_image, controller_tag = controller_rock_info.image.split(":")
     controller_registry, controller_image_name = controller_image.split("/", maxsplit=1)
-    controller_digest = _get_image_digest(function_instance, controller_rock_info.image)
+    controller_digest = _get_image_digest(controller_rock_info.image)
     all_chart_value_overrides_args.extend(
         [
             "--set",
@@ -107,7 +107,7 @@ def test_nginx_ingress_chart_deployment(
     ]
     certgen_image, certgen_tag = certgen_rock_info.image.split(":")
     certgen_registry, certgen_image_name = certgen_image.split("/", maxsplit=1)
-    certgen_digest = _get_image_digest(function_instance, certgen_rock_info.image)
+    certgen_digest = _get_image_digest(certgen_rock_info.image)
     all_chart_value_overrides_args.extend(
         [
             "--set",
