@@ -47,8 +47,7 @@ IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP = {
 
 def _get_image_digest(instance: harness.Instance, image: str) -> str:
     proc = instance.exec(
-        ["docker", "images", "--no-trunc", "--quiet", image],
-        capture_output=True
+        ["docker", "images", "--no-trunc", "--quiet", image], capture_output=True
     )
     return proc.stdout.decode().strip()
 
@@ -83,6 +82,18 @@ def test_nginx_ingress_chart_deployment(
             f"{controller_chart_section}.image.tag={controller_tag}",
             "--set",
             f"{controller_chart_section}.image.digest=sha256:{controller_digest}",
+        ]
+    )
+    # NOTE(aznashwan): Ubuntu has defaults for the IDs of the www-data
+    # user/group different from the onea set in the upstream repo:
+    # https://github.com/kubernetes/ingress-nginx/blob/helm-chart-4.11.1/charts/ingress-nginx/values.yaml#L34-L35
+    www_data_uid = 33
+    all_chart_value_overrides_args.extend(
+        [
+            "--set",
+            f"{controller_chart_section}.image.runAsUser={www_data_uid}",
+            "--set",
+            f"{controller_chart_section}.image.runAsGroup={www_data_uid}",
         ]
     )
 
