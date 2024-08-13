@@ -76,21 +76,23 @@ parts:
   build-libgrpcpp:
     plugin: nil
     after: ['prepare-base-image']
+
+    source-type: git
+    # HACK(aznashwan): the `libgrpc++` package on 22.04 is version 1.30,
+    # while the `grpc-dev` package in the Alpine repos used in the original
+    # image is currently 1.62.1, so we must build it ourselves:
+    source: https://github.com/grpc/grpc
+    source-tag: v1.62.1
+    source-depth: 1
+
     build-packages:
       - cmake
+
     override-build: |
       set -eux -o pipefail
 
-      # HACK(aznashwan): the `libgrpc++` package on 22.04 is version 1.30,
-      # while the `grpc-dev` package in the Alpine repos used in the original
-      # image is currently 1.62.1, so we must build it ourselves:
-      LIBGRPC_VERSION=v1.62.1
+      cd $CRAFT_PART_SRC
 
-      cd /tmp
-      git clone --recurse-submodules --depth 1 --shallow-submodules \
-        -b $LIBGRPC_VERSION https://github.com/grpc/grpc
-
-      cd /tmp/grpc
       mkdir -p cmake/build
       pushd cmake/build
       cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF \
@@ -100,27 +102,25 @@ parts:
       make -j 4
       make install
 
-
   build-libssl:
     plugin: nil
     after: ['prepare-base-image']
+
+    source-type: tar
+    # HACK(aznashwan): the version of OpenSSL used in the upstream Nginx
+    # image is 3.3.1, which is not otherwise available on 22.04:
+    source: https://github.com/openssl/openssl/releases/download/openssl-3.3.1/openssl-3.3.1.tar.gz
+
     build-packages:
       - build-essential
       - checkinstall
       - zlib1g-dev
+
     override-build: |
       set -eux -o pipefail
 
-      # HACK(aznashwan): the version of OpenSSL used in the upstream Nginx
-      # image is 3.3.1, which is not otherwise available on 22.04:
-      SSL_VERSION=3.3.1
+      cd $CRAFT_PART_SRC
 
-      cd /tmp
-      mkdir openssl
-      wget https://github.com/openssl/openssl/releases/download/openssl-${SSL_VERSION}/openssl-${SSL_VERSION}.tar.gz
-      tar -xzvf openssl-${SSL_VERSION}.tar.gz
-
-      cd openssl-${SSL_VERSION}
       ./config shared zlib
       make
       make install
