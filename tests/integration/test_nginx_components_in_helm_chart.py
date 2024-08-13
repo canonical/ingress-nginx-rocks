@@ -8,7 +8,7 @@ import sys
 
 import pytest
 from k8s_test_harness import harness
-from k8s_test_harness.util import env_util, exec_util, platform_util
+from k8s_test_harness.util import env_util, k8s_util, platform_util
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -45,6 +45,7 @@ IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP = {
 }
 
 
+@k8s_util.describe_resources_on_error("pods")
 @pytest.mark.parametrize("controller_version", NGINX_CONTROLLER_VERSIONS)
 def test_nginx_ingress_chart_deployment(
     function_instance: harness.Instance, controller_version: str
