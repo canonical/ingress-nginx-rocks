@@ -26,7 +26,9 @@ services:
     startup: enabled
     override: replace
 
-    command: nginx -g 'daemon off;'
+    command: nginx [ -g 'daemon off;' ]
+
+entrypoint-service: nginx
 
 # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/images/nginx-1.25/rootfs/Dockerfile#L26-L29
 environment:
