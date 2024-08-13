@@ -45,13 +45,6 @@ IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP = {
 }
 
 
-def _get_image_digest(image: str) -> str:
-    proc = exec_util.run(
-        ["docker", "images", "--no-trunc", "--quiet", image], capture_output=True
-    )
-    return proc.stdout.decode().strip()
-
-
 @pytest.mark.parametrize("controller_version", NGINX_CONTROLLER_VERSIONS)
 def test_nginx_ingress_chart_deployment(
     function_instance: harness.Instance, controller_version: str
@@ -71,7 +64,6 @@ def test_nginx_ingress_chart_deployment(
     controller_chart_section = IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP["controller"]
     controller_image, controller_tag = controller_rock_info.image.split(":")
     controller_registry, controller_image_name = controller_image.split("/", maxsplit=1)
-    controller_digest = _get_image_digest(controller_rock_info.image)
     all_chart_value_overrides_args.extend(
         [
             "--set",
@@ -81,7 +73,7 @@ def test_nginx_ingress_chart_deployment(
             "--set",
             f"{controller_chart_section}.image.tag={controller_tag}",
             "--set",
-            f"{controller_chart_section}.image.digest={controller_digest}",
+            f"{controller_chart_section}.image.digest=",
         ]
     )
     # NOTE(aznashwan): Ubuntu has defaults for the IDs of the www-data
@@ -107,7 +99,6 @@ def test_nginx_ingress_chart_deployment(
     ]
     certgen_image, certgen_tag = certgen_rock_info.image.split(":")
     certgen_registry, certgen_image_name = certgen_image.split("/", maxsplit=1)
-    certgen_digest = _get_image_digest(certgen_rock_info.image)
     all_chart_value_overrides_args.extend(
         [
             "--set",
@@ -117,7 +108,7 @@ def test_nginx_ingress_chart_deployment(
             "--set",
             f"{certgen_chart_section}.image.tag={certgen_tag}",
             "--set",
-            f"{certgen_chart_section}.image.digest={certgen_digest}",
+            f"{certgen_chart_section}.image.digest=",
         ]
     )
 
