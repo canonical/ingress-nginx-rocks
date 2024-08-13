@@ -34,11 +34,13 @@ services:
     startup: enabled
     override: replace
 
-    command: /kube-webhook-certgen
+    command: /kube-webhook-certgen [ create ]
 
     user: nonroot
     group: nonroot
     working-dir: /
+
+entrypoint-service: kube_webhook_certgen
 
 parts:
 
