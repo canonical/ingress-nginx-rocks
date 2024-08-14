@@ -2,13 +2,14 @@
 # Copyright 2024 Canonical, Ltd.
 #
 
+import functools
 import json
 import logging
 import sys
 
 import pytest
 from k8s_test_harness import harness
-from k8s_test_harness.util import env_util, k8s_util, platform_util
+from k8s_test_harness.util import env_util, platform_util
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -45,7 +46,28 @@ IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP = {
 }
 
 
-@k8s_util.describe_resources_on_error("pods")
+def describe_resources_on_error(resource_type: str):
+    def _decorator(fun):
+        @functools.wraps(fun)
+        def _inner(function_instance: harness.Instance, *args, **kwargs):
+            try:
+                return fun(function_instance, *args, **kwargs)
+            except Exception:
+                proc = function_instance.exec(
+                    ["k8s", "kubectl", "describe", resource_type], capture_output=True
+                )
+                LOG.info(
+                    f"### All current '{resource_type}' definitions: "
+                    f"{proc.stdout.decode()}"
+                )
+                raise
+
+        return _inner
+
+    return _decorator
+
+
+@describe_resources_on_error("pods")
 @pytest.mark.parametrize("controller_version", NGINX_CONTROLLER_VERSIONS)
 def test_nginx_ingress_chart_deployment(
     function_instance: harness.Instance, controller_version: str
