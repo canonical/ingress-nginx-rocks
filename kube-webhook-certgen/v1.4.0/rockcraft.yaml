@@ -36,6 +36,9 @@ services:
 
     command: /kube-webhook-certgen [ create ]
 
+    on-success: shutdown
+    on-failure: shutdown
+
     user: nonroot
     group: nonroot
     working-dir: /
