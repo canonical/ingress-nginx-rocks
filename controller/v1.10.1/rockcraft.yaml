@@ -750,15 +750,20 @@ parts:
       make
       make install
 
-      # update image permissions
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/rootfs/Dockerfile#L48-L63
       writeDirs=( \
         /etc/nginx \
+        /etc/ingress-controller/ssl \
+        /etc/ingress-controller/auth \
+        /etc/ingress-controller/geoip \
+        /etc/ingress-controller/telemetry \
         /usr/local/nginx \
         /opt/modsecurity/var/log \
         /opt/modsecurity/var/upload \
         /opt/modsecurity/var/audit \
         /var/log/audit \
         /var/log/nginx \
+        /tmp/nginx \
       );
 
       for dir in "${writeDirs[@]}"; do
@@ -782,6 +787,7 @@ parts:
       mkdir -p $CRAFT_PART_INSTALL/opt
       cp -rp /opt/* $CRAFT_PART_INSTALL/opt
 
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/rootfs/Dockerfile#L42
       mkdir -p $CRAFT_PART_INSTALL/etc/nginx
       cp -rp $CRAFT_PART_SRC/rootfs/etc/nginx/* $CRAFT_PART_INSTALL/etc/nginx
       cp -rp /etc/nginx/* $CRAFT_PART_INSTALL/etc/nginx
@@ -801,3 +807,45 @@ parts:
       - var/log/nginx
       - var/log/audit
       - var/lib/nginx
+
+  build-go-binaries:
+    after: ['build-nginx']
+    plugin: go
+
+    build-environment:
+      - CGO_ENABLED: 0
+
+    build-snaps:
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/GOLANG_VERSION#L1
+      - go/1.22/stable
+
+    source-type: git
+    source: https://github.com/kubernetes/ingress-nginx
+    source-tag: controller-v1.10.1
+    source-depth: 1
+
+    override-build: |
+      set -eux -o pipefail
+
+      mkdir -p rootfs/bin
+
+      export TAG="controller-v1.10.1"
+      export PKG="k8s.io/ingress-nginx"
+      export ARCH="$CRAFT_TARGET_ARCH"
+      cd $CRAFT_PART_SRC
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/Makefile#L45-L46
+      export COMMIT_SHA=`git rev-parse HEAD`
+      export REPO_INFO=`git config --get remote.origin.url`
+
+      bash build/build.sh
+
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/rootfs/Dockerfile#L44-L46
+      cp rootfs/bin/${ARCH}/{dbg,nginx-ingress-controller,wait-shutdown} $CRAFT_PART_INSTALL
+      chown -R www-data:www-data $CRAFT_PART_INSTALL/{dbg,nginx-ingress-controller,wait-shutdown}
+
+      # setcap cap_net_bind_service=+ep /nginx-ingress-controller
+      # setcap -v cap_net_bind_service=+ep /nginx-ingress-controller
+      # setcap    cap_net_bind_service=+ep /usr/local/nginx/sbin/nginx
+      # setcap -v cap_net_bind_service=+ep /usr/local/nginx/sbin/nginx
+      # setcap    cap_net_bind_service=+ep /usr/bin/dumb-init
+      # setcap -v cap_net_bind_service=+ep /usr/bin/dumb-init
