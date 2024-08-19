@@ -26,7 +26,7 @@ services:
     startup: enabled
     override: replace
 
-    command: nginx [ -g 'daemon off;' ]
+    command: /usr/bin/dumb-init -- [ /nginx-ingress-controller ]
 
 entrypoint-service: nginx
 
@@ -843,9 +843,10 @@ parts:
       cp rootfs/bin/${ARCH}/{dbg,nginx-ingress-controller,wait-shutdown} $CRAFT_PART_INSTALL
       chown -R www-data:www-data $CRAFT_PART_INSTALL/{dbg,nginx-ingress-controller,wait-shutdown}
 
-      # setcap cap_net_bind_service=+ep /nginx-ingress-controller
-      # setcap -v cap_net_bind_service=+ep /nginx-ingress-controller
-      # setcap    cap_net_bind_service=+ep /usr/local/nginx/sbin/nginx
-      # setcap -v cap_net_bind_service=+ep /usr/local/nginx/sbin/nginx
-      # setcap    cap_net_bind_service=+ep /usr/bin/dumb-init
-      # setcap -v cap_net_bind_service=+ep /usr/bin/dumb-init
+      setcap cap_net_bind_service=+ep $CRAFT_PART_INSTALL/nginx-ingress-controller
+      setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/nginx-ingress-controller
+      setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
+      setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
+      # NOTE(aznashwan): dumb-init is a staged package.
+      # setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init
+      # setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init

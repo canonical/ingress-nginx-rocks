@@ -26,7 +26,7 @@ services:
     startup: enabled
     override: replace
 
-    command: /nginx-ingress-controller [ optional args ]
+    command: /usr/bin/dumb-init -- [ /nginx-ingress-controller ]
 
 entrypoint-service: nginx
 
@@ -750,17 +750,21 @@ parts:
       make
       make install
 
-      # update image permissions
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/rootfs/Dockerfile#L48-L63
       writeDirs=( \
         /etc/nginx \
+        /etc/ingress-controller/ssl \
+        /etc/ingress-controller/auth \
+        /etc/ingress-controller/geoip \
+        /etc/ingress-controller/telemetry \
         /usr/local/nginx \
         /opt/modsecurity/var/log \
         /opt/modsecurity/var/upload \
         /opt/modsecurity/var/audit \
         /var/log/audit \
         /var/log/nginx \
+        /tmp/nginx \
       );
-
       for dir in "${writeDirs[@]}"; do
         mkdir -p ${dir};
         chown -R www-data.www-data ${dir};
@@ -837,9 +841,10 @@ parts:
       cp rootfs/bin/${ARCH}/{dbg,nginx-ingress-controller,wait-shutdown} $CRAFT_PART_INSTALL
       chown -R www-data:www-data $CRAFT_PART_INSTALL/{dbg,nginx-ingress-controller,wait-shutdown}
 
-      # setcap cap_net_bind_service=+ep /nginx-ingress-controller
-      # setcap -v cap_net_bind_service=+ep /nginx-ingress-controller
-      # setcap    cap_net_bind_service=+ep /usr/local/nginx/sbin/nginx
-      # setcap -v cap_net_bind_service=+ep /usr/local/nginx/sbin/nginx
-      # setcap    cap_net_bind_service=+ep /usr/bin/dumb-init
-      # setcap -v cap_net_bind_service=+ep /usr/bin/dumb-init
+      setcap cap_net_bind_service=+ep $CRAFT_PART_INSTALL/nginx-ingress-controller
+      setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/nginx-ingress-controller
+      setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
+      setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
+      # NOTE(aznashwan): dumb-init is a staged package.
+      # setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init
+      # setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init
