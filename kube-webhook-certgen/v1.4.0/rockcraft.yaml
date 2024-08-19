@@ -34,7 +34,10 @@ services:
     startup: enabled
     override: replace
 
-    command: /kube-webhook-certgen [ create ]
+    # NOTE(aznashwan): simple script which sleeps for 1 second before
+    # exec-ing the actual kube-webhook-certgen binary:
+    # https://github.com/canonical/pebble/issues/240#issuecomment-1599722443
+    command: /pebble-entrypoint.sh [ create ]
 
     on-success: shutdown
     on-failure: shutdown
@@ -158,3 +161,6 @@ parts:
       go build -a -o kube-webhook-certgen main.go
 
       cp ./kube-webhook-certgen $CRAFT_PART_INSTALL/kube-webhook-certgen
+
+      cp $CRAFT_PROJECT_DIR/pebble-entrypoint.sh $CRAFT_PART_INSTALL/pebble-entrypoint.sh
+
