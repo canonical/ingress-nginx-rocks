@@ -206,6 +206,7 @@ parts:
       - libre2-dev
       - libprotobuf-dev
       - libabsl-dev
+      - libcap2-bin
 
     build-environment:
       - LD_LIBRARY_PATH: /usr/local/lib
@@ -788,6 +789,9 @@ parts:
       # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/images/nginx-1.25/rootfs/Dockerfile#L31-L34
       mkdir -p $CRAFT_PART_INSTALL/usr/local
       cp -rp /usr/local/* $CRAFT_PART_INSTALL/usr/local
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/rootfs/Dockerfile#L73-L74
+      setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
+      setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
 
       mkdir -p $CRAFT_PART_INSTALL/usr/local/lib
       cp /usr/lib/x86_64-linux-gnu/libopentelemetry* $CRAFT_PART_INSTALL/usr/local/lib
@@ -826,6 +830,9 @@ parts:
       # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/GOLANG_VERSION#L1
       - go/1.22/stable
 
+    build-packages:
+      - libcap2-bin
+
     source-type: git
     source: https://github.com/kubernetes/ingress-nginx
     source-tag: controller-v1.11.0
@@ -852,8 +859,7 @@ parts:
 
       setcap cap_net_bind_service=+ep $CRAFT_PART_INSTALL/nginx-ingress-controller
       setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/nginx-ingress-controller
-      setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
-      setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
+
       # NOTE(aznashwan): dumb-init is a staged package.
       # setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init
       # setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init
