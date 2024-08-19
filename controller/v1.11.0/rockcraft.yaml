@@ -794,8 +794,11 @@ parts:
       setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
 
       mkdir -p $CRAFT_PART_INSTALL/usr/local/lib
-      cp /usr/lib/x86_64-linux-gnu/libopentelemetry* $CRAFT_PART_INSTALL/usr/local/lib
-
+      LIBPATH="/usr/lib/x86_64-linux-gnu"
+      if [ $CRAFT_TARGET_ARCH == "arm64" ]; then
+        LIBPATH="/usr/lib/aarch64-linux-gnu"
+      fi
+      cp $LIBPATH/libopentelemetry* $CRAFT_PART_INSTALL/usr/local/lib
       mkdir -p $CRAFT_PART_INSTALL/opt
       cp -rp /opt/* $CRAFT_PART_INSTALL/opt
 
@@ -812,7 +815,7 @@ parts:
 
     stage:
       - usr/local/*
-      - usr/lib/x86_64-linux-gnu/*
+      - usr/lib/*
       - opt/*
       - etc/nginx/*
       - var/log/nginx
