@@ -134,6 +134,13 @@ def test_nginx_ingress_chart_deployment(
             f"{certgen_chart_section}.image.digest=",
         ]
     )
+    # NOTE(aznashwan): admission web hook containers are set to RO:
+    all_chart_value_overrides_args.extend(
+        [
+            "--set",
+            "controller.admissionWebhooks.createSecretJob.securityContext.readOnlyRootFilesystem=false",
+        ]
+    )
 
     # NOTE(aznashwan): GitHub actions UI sometimes truncates env values:
     all_rocks_meta_info = env_util.get_rocks_meta_info_from_env()
