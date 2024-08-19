@@ -37,7 +37,7 @@ services:
     # NOTE(aznashwan): simple script which sleeps for 1 second before
     # exec-ing the actual kube-webhook-certgen binary:
     # https://github.com/canonical/pebble/issues/240#issuecomment-1599722443
-    command: bash /pebble-entrypoint.sh [ create ]
+    command: busybox sh /pebble-entrypoint.sh [ create ]
 
     on-success: shutdown
     on-failure: shutdown
@@ -65,7 +65,6 @@ parts:
       - login
       # https://github.com/GoogleContainerTools/distroless/blob/a019fc2/base/base.bzl#L118
       - libssl3
-      - bash
     override-build: |
       set -eux -o pipefail
 
