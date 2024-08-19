@@ -26,7 +26,7 @@ services:
     startup: enabled
     override: replace
 
-    command: nginx [ -g 'daemon off;' ]
+    command: /nginx-ingress-controller [ optional args ]
 
 entrypoint-service: nginx
 
