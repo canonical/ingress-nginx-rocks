@@ -127,10 +127,19 @@ parts:
       make
       make install
 
+      LIBSSL_TARGET="/usr/local/lib64/libssl.so.3"
+      LIBCRYPTO_TARGET="/usr/local/lib64/libcrypto.so"
+      if [ "$CRAFT_TARGET_ARCH" == "arm64" ]; then
+        LIBSSL_TARGET="/usr/lib/aarch64-linux-gnu/libssl.so.3"
+        LIBCRYPTO_TARGET="/usr/lib/aarch64-linux-gnu/libcrypto.so.3"
+      fi
+
       rm -f /usr/local/lib/libssl.so
-      ln -s /usr/local/lib64/libssl.so.3 /usr/local/lib/libssl.so
+      ln -s $LIBSSL_TARGET /usr/local/lib/libssl.so
+
       rm -f /usr/local/lib/libcrypto.so
-      ln -s /usr/local/lib64/libcrypto.so /usr/local/lib/libcrypto.so
+      ln -s $LIBCRYPTO_TARGET /usr/local/lib/libcrypto.so
+
       ldconfig -p
 
   build-nginx:
