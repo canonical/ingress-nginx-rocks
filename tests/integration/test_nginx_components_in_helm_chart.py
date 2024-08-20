@@ -139,6 +139,8 @@ def test_nginx_ingress_chart_deployment(
         [
             "--set",
             "controller.admissionWebhooks.createSecretJob.securityContext.readOnlyRootFilesystem=false",
+            "--set",
+            "controller.admissionWebhooks.patchWebhookJob.securityContext.readOnlyRootFilesystem=false",
         ]
     )
 
