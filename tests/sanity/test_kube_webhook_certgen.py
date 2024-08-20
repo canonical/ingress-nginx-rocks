@@ -16,7 +16,7 @@ LOG.addHandler(logging.StreamHandler(sys.stdout))
 
 
 IMAGE_NAME = "kube-webhook-certgen"
-IMAGE_VERSIONS = ["v1.4.1"]
+IMAGE_VERSIONS = ["v1.4.0", "v1.4.1"]
 
 
 @pytest.mark.abort_on_fail

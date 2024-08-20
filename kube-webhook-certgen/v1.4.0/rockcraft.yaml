@@ -1,25 +1,25 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-# Rockcraft definition for the kube-webhook-certgen:v1.4.1 image:
-# registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.4.1
+# Rockcraft definition for the kube-webhook-certgen:v1.4.0 image:
+# registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.4.0
 
 name: kube-webhook-certgen
 summary: Rock containing kube-webhook-certgen executable.
 description: |
   Rock containing kube-webhook-certgen executable available at:
-  https://github.com/kubernetes/ingress-nginx/tree/controller-v1.11.0/images/kube-webhook-certgen
+  https://github.com/kubernetes/ingress-nginx/tree/controller-v1.10.1/images/kube-webhook-certgen
 license: Apache-2.0
 
 # NOTE(aznashwan): the `kube-webhook-certgen` image is versioned independently
-# from the main `nginx-ingress-controller` image, with 'v1.4.1' being the tag
-# corresponding to the `controller-v1.11.0`
-# https://github.com/kubernetes/ingress-nginx/pull/11212
-# https://github.com/kubernetes/ingress-nginx/releases/tag/controller-v1.11.0
-version: v1.4.1
+# from the main `nginx-ingress-controller` image, with 'v1.4.0' being the tag
+# corresponding to the `controller-v1.10.1`
+# https://github.com/kubernetes/ingress-nginx/pull/11033
+# https://github.com/kubernetes/ingress-nginx/releases/tag/controller-v1.10.0
+version: v1.4.0
 
 # NOTE(aznashwan): upstream image is build from `gcr.io/distroless/static:nonroot`:
-# https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/images/kube-webhook-certgen/rootfs/Dockerfile#L27
+# https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/images/kube-webhook-certgen/rootfs/Dockerfile#L27
 # The base `distroless/static:nonroot` image is built using Bazel and is basically
 # just a very minimal Debian-based image with a `nonroot` user added to it.
 # https://github.com/GoogleContainerTools/distroless/blob/main/base
@@ -51,7 +51,7 @@ entrypoint-service: kube_webhook_certgen
 parts:
 
   # NOTE(aznashwan): upstream image is build from `gcr.io/distroless/static:nonroot`:
-  # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/images/kube-webhook-certgen/rootfs/Dockerfile#L27
+  # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/images/kube-webhook-certgen/rootfs/Dockerfile#L27
   # The base `distroless/static:nonroot` image is built using Bazel and is basically
   # just a very minimal Debian-based image with a `nonroot` user added to it.
   # https://github.com/GoogleContainerTools/distroless/blob/main/base
@@ -123,14 +123,14 @@ parts:
       chown -R $NONROOT_UID:$NONROOT_UID $NONROOT_HOME
 
   # Sourced from:
-  # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/images/kube-webhook-certgen/rootfs/Dockerfile
+  # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/images/kube-webhook-certgen/rootfs/Dockerfile
   build-kube-webhook-certgen:
     after: ["setup-users"]
     plugin: go
 
     source-type: git
     source: https://github.com/kubernetes/ingress-nginx
-    source-tag: controller-v1.11.0
+    source-tag: controller-v1.10.1
     source-depth: 1
     source-subdir: images/kube-webhook-certgen/rootfs/
 
@@ -140,7 +140,7 @@ parts:
       - GOARCH: $CRAFT_ARCH_BUILD_FOR
 
     build-snaps:
-      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/GOLANG_VERSION#L1
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/GOLANG_VERSION#L1
       - go/1.22/stable
 
     override-build: |
