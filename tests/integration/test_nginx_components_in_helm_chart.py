@@ -9,7 +9,7 @@ import sys
 
 import pytest
 from k8s_test_harness import harness
-from k8s_test_harness.util import env_util, platform_util
+from k8s_test_harness.util import constants, env_util, k8s_util, platform_util
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ def test_nginx_ingress_chart_deployment(
         ]
     )
     # NOTE(aznashwan): Ubuntu has defaults for the IDs of the www-data
-    # user/group different from the onea set in the upstream repo:
+    # user/group different from the ones set in the upstream repo:
     # https://github.com/kubernetes/ingress-nginx/blob/helm-chart-4.11.1/charts/ingress-nginx/values.yaml#L34-L35
     www_data_uid = 33
     all_chart_value_overrides_args.extend(
@@ -161,4 +161,11 @@ def test_nginx_ingress_chart_deployment(
 
     function_instance.exec(helm_command)
 
-    # TODO(aznashwan): add checks for controller pod and certgen admission hook:
+    deployment_name = "ingress-nginx-controller"
+    retry_kwargs = {"retry_times": 30, "retry_delay_s": 10}
+    k8s_util.wait_for_deployment(
+        function_instance,
+        deployment_name,
+        condition=constants.K8S_CONDITION_AVAILABLE,
+        **retry_kwargs,
+    )
