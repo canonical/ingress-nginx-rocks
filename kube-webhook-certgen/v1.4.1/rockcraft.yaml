@@ -74,27 +74,18 @@ parts:
       mkdir -p $etc
       cp $CRAFT_PROJECT_DIR/nsswitch.conf $etc/nsswitch.conf
 
-  include-busybox-debug:
+  include-busybox-binary:
     after: ["install-base-packages"]
     plugin: nil
+
     build-packages:
       - busybox-static
-
-    build-environment:
-      # NOTE(aznashwan): the upstream dstroless images also have variants with
-      # BusyBox included to facilitate debugging, which we will conditionally
-      # include based on this environment variable.
-      # https://github.com/GoogleContainerTools/distroless/blob/a019fc2/base/base.bzl#L157
-      # TODO(aznashwan): set this back to 0:
-      - DISTROLESS_BUSYBOX_DEBUG: 1
 
     override-build: |
       set -eux
 
-      if [ "$DISTROLESS_BUSYBOX_DEBUG" -eq "1" ]; then
-        mkdir -p "$CRAFT_PART_INSTALL/bin"
-        cp $(which busybox) "$CRAFT_PART_INSTALL/bin"
-      fi
+      mkdir -p "$CRAFT_PART_INSTALL/bin"
+      cp $(which busybox) "$CRAFT_PART_INSTALL/bin"
 
   setup-users:
     after: ["install-base-packages"]
