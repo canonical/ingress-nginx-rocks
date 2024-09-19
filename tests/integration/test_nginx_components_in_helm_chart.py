@@ -99,16 +99,35 @@ def test_nginx_ingress_chart_deployment(
             f"{controller_chart_section}.image.digest=",
         ]
     )
-    # NOTE(aznashwan): Ubuntu has defaults for the IDs of the www-data
-    # user/group different from the ones set in the upstream repo:
-    # https://github.com/kubernetes/ingress-nginx/blob/helm-chart-4.11.1/charts/ingress-nginx/values.yaml#L34-L35
-    www_data_uid = 33
+
+    # NOTE(aznashwan): we pass the whole securityContext definition
+    # as JSON as the Chart's values doesn't expose the `capabilites`
+    # field of the controller containers directly:
+    # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/charts/ingress-nginx/templates/_helpers.tpl#L44-L54
+    controller_security_context = {
+        # HACK(aznashwan): rockcraft does not currently preserve extended file
+        # attributes and Nginx cannot be run on low ports (< 1024) without
+        # cap_net_bind_service available, so we run the test as root:
+        # https://github.com/canonical/rockcraft/issues/683
+        # NOTE(aznashwan): Ubuntu has defaults for the IDs of the www-data
+        # user/group different from the ones set in the upstream repo:
+        # https://github.com/kubernetes/ingress-nginx/blob/helm-chart-4.11.1/charts/ingress-nginx/values.yaml#L34-L35
+        # "runAsUser": 33,
+        # "runAsGroup": 33,
+        "runAsUser": 0,
+        "runAsGroup": 0,
+        "runAsNonRoot": False,
+        "allowPrivilegeEscalation": False,
+        "capabilities": None,
+        # NOTE(aznashwan): Pebble requires access to /var:
+        "readOnlyRootFilesystem": False,
+    }
+
+    sec_ctxt_json = json.dumps(controller_security_context)
     all_chart_value_overrides_args.extend(
         [
-            "--set",
-            f"{controller_chart_section}.image.runAsUser={www_data_uid}",
-            "--set",
-            f"{controller_chart_section}.image.runAsGroup={www_data_uid}",
+            "--set-json",
+            f"{controller_chart_section}.containerSecurityContext={sec_ctxt_json}"
         ]
     )
 
