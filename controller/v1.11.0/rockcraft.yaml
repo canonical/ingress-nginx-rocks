@@ -26,7 +26,12 @@ services:
     startup: enabled
     override: replace
 
-    command: /usr/bin/dumb-init -- [ /nginx-ingress-controller ]
+    # NOTE(aznashwan): the entrypoint script simply runs
+    # 'ldconfig' before exec-ing the controller binary:
+    command: /pebble-entrypoint.sh [ /nginx-ingress-controller ]
+
+    on-success: shutdown
+    on-failure: shutdown
 
 entrypoint-service: nginx
 
@@ -63,7 +68,6 @@ parts:
       - libmaxminddb-dev
       - libyaml-cpp-dev
       - libprotobuf-dev
-      - dumb-init
       - tzdata
 
     overlay-script: |
@@ -773,6 +777,7 @@ parts:
         /opt/modsecurity/var/audit \
         /var/log/audit \
         /var/log/nginx \
+        /var/www \
         /tmp/nginx \
       );
       for dir in "${writeDirs[@]}"; do
@@ -792,6 +797,9 @@ parts:
       # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/rootfs/Dockerfile#L73-L74
       setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
       setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/local/nginx/sbin/nginx
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.10.1/rootfs/Dockerfile#L78
+      mkdir -p $CRAFT_PART_INSTALL/usr/bin
+      ln -s /usr/local/nginx/sbin/nginx $CRAFT_PART_INSTALL/usr/bin/nginx
 
       mkdir -p $CRAFT_PART_INSTALL/usr/local/lib
       LIBPATH="/usr/lib/x86_64-linux-gnu"
@@ -802,25 +810,34 @@ parts:
       mkdir -p $CRAFT_PART_INSTALL/opt
       cp -rp /opt/* $CRAFT_PART_INSTALL/opt
 
-      mkdir -p $CRAFT_PART_INSTALL/etc/nginx
+      mkdir -p $CRAFT_PART_INSTALL/etc
+      cp -rp /etc/nginx $CRAFT_PART_INSTALL/etc/nginx
       cp -rp $CRAFT_PART_SRC/rootfs/etc/nginx/* $CRAFT_PART_INSTALL/etc/nginx
-      cp -rp /etc/nginx/* $CRAFT_PART_INSTALL/etc/nginx
+      cp -rp /etc/ingress-controller $CRAFT_PART_INSTALL/etc/ingress-controller
 
       # Added files/directories that need creating:
       mkdir -p $CRAFT_PART_INSTALL/var/log
       cp -rp /var/log/nginx $CRAFT_PART_INSTALL/var/log
       cp -rp /var/log/audit $CRAFT_PART_INSTALL/var/log
 
+      cp -rp /var/www $CRAFT_PART_INSTALL/var
       mkdir -p $CRAFT_PART_INSTALL/var/lib/nginx
 
+      mkdir -p $CRAFT_PART_INSTALL/tmp
+      cp -rp /tmp/nginx $CRAFT_PART_INSTALL/tmp
+
     stage:
+      - usr/bin/*
       - usr/local/*
       - usr/lib/*
       - opt/*
       - etc/nginx/*
+      - etc/ingress-controller/*
+      - tmp/nginx
       - var/log/nginx
       - var/log/audit
       - var/lib/nginx
+      - var/www
 
   build-go-binaries:
     after: ['build-nginx']
@@ -835,6 +852,7 @@ parts:
 
     build-packages:
       - libcap2-bin
+      - dumb-init
 
     source-type: git
     source: https://github.com/kubernetes/ingress-nginx
@@ -863,6 +881,13 @@ parts:
       setcap cap_net_bind_service=+ep $CRAFT_PART_INSTALL/nginx-ingress-controller
       setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/nginx-ingress-controller
 
-      # NOTE(aznashwan): dumb-init is a staged package.
-      # setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init
-      # setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init
+      # NOTE(aznashwan): need to set proper caps on dumb-init:
+      # https://github.com/kubernetes/ingress-nginx/blob/controller-v1.11.0/rootfs/Dockerfile#L75-L76
+      mkdir -p $CRAFT_PART_INSTALL/usr/bin
+      cp /usr/bin/dumb-init $CRAFT_PART_INSTALL/usr/bin
+      setcap    cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init
+      setcap -v cap_net_bind_service=+ep $CRAFT_PART_INSTALL/usr/bin/dumb-init
+
+      cp $CRAFT_PROJECT_DIR/pebble-entrypoint.sh $CRAFT_PART_INSTALL/pebble-entrypoint.sh
+      chmod +x $CRAFT_PART_INSTALL/pebble-entrypoint.sh
+
