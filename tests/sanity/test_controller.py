@@ -53,6 +53,6 @@ def test_compare_rock_files_to_original(image_version):
         rock_extra_files = rock_fileset - original_fileset
         if rock_extra_files:
             pytest.fail(
-                f"Rock has extra files not present in original image: "
+                f"Rock has extra files that are not in the original image: "
                 f"{rock_extra_files}"
             )
