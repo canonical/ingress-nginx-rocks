@@ -31,12 +31,14 @@ NGINX_KUBE_WEBHOOK_CERTGEN_VERSION_MAP = {
 
 # HACK(aznashwan): revert to upstream chart once this PR is included in a release:
 # https://github.com/kubernetes/ingress-nginx/pull/11710
-# CHART_RELEASE_URL = "https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.11.1/ingress-nginx-4.11.1.tgz"
-CHART_RELEASE_URL = "https://github.com/aznashwan/ingress-nginx/releases/download/helm-chart-4.11.1/ingress-nginx-4.11.1.tgz"
+# CHART_RELEASE_URL =
+#     "https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.11.1/ingress-nginx-4.11.1.tgz"
+CHART_RELEASE_URL = "https://github.com/\
+aznashwan/ingress-nginx/releases/download/helm-chart-4.11.1/ingress-nginx-4.11.1.tgz"
 INSTALL_NAME = "ingress-nginx"
 
 # This mapping indicates which fields of the upstream Nginx-ingress Helm chart
-# contain the 'image' fields which should be overriden with the ROCK
+# contain the 'image' fields which should be overridden with the ROCK
 # image URLs and version during testing.
 # https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
 IMAGE_NAMES_TO_CHART_VALUES_OVERRIDES_MAP = {
@@ -127,7 +129,7 @@ def test_nginx_ingress_chart_deployment(
     all_chart_value_overrides_args.extend(
         [
             "--set-json",
-            f"{controller_chart_section}.containerSecurityContext={sec_ctxt_json}"
+            f"{controller_chart_section}.containerSecurityContext={sec_ctxt_json}",
         ]
     )
 
